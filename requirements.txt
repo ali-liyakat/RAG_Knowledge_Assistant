@@ -1,0 +1,4 @@
+pymupdf
+langchain
+sentence-transformers
+python-dotenv
