@@ -1,10 +1,11 @@
-# 📚 RAG Knowledge Assistant
+# 🧠 StudyMind
 
-A production-style Retrieval-Augmented Generation (RAG) system that answers questions grounded in your own study notes — with citations, live document uploads, and a measured, tuned retrieval pipeline. Built end-to-end, entirely on free-tier tools.
+🔗 **Live demo:** [ragknowledgeassistant786.streamlit.app](https://ragknowledgeassistant786.streamlit.app/)
+
+An AI-powered knowledge assistant that answers Machine Learning and Deep Learning questions with grounded, source-cited explanations — built on a continuously growing personal knowledge base. Every answer traces back to a verified source, so you always know exactly where the information came from.
 
 > Ask a question → the system retrieves the most relevant chunks from your notes → an LLM generates an answer using *only* that context → every answer is cited back to its source document and page.
 
-🔗 **Live demo:** [ragknowledgeassistant786.streamlit.app](https://ragknowledgeassistant786.streamlit.app/)
 
 ---
 

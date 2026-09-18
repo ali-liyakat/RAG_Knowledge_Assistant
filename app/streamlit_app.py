@@ -29,7 +29,7 @@ from src.ingestion.loader import load_pdf
 from src.ingestion.chunker import chunk_pages
 from src.ingestion.embedder import embed_and_store
 
-st.set_page_config(page_title="RAG Knowledge Assistant", page_icon="📚", layout="centered")
+st.set_page_config(page_title="StudyMind", page_icon="🧠", layout="centered")
 
 # ---------- Custom styling ----------
 st.markdown("""
@@ -158,9 +158,10 @@ div[data-testid="stSpinner"] p { color: #A78BFA !important; font-weight: 600; }
 """, unsafe_allow_html=True)
 
 # ---------- Header ----------
-st.markdown('<p class="main-title">📚 RAG Knowledge<br>Assistant</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-title">🧠 StudyMind</p>', unsafe_allow_html=True)
 st.markdown(
-    '<p class="subtitle">Ask questions from your ML/DL notes and get grounded, cited answers.</p>',
+    '<p class="subtitle">An AI knowledge assistant that answers ML/DL questions with grounded, '
+    'source-cited explanations — built on a knowledge base you can expand anytime.</p>',
     unsafe_allow_html=True
 )
 
