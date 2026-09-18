@@ -1,11 +1,33 @@
 """
 streamlit_app.py — chat UI for the RAG Knowledge Assistant.
+Calls the RAG pipeline directly (no separate API server needed for deployment).
 """
+import sys
+from pathlib import Path
+
+# Ensure the project root is importable regardless of how/where this script is launched from —
+# needed both locally and on Streamlit Cloud, since streamlit run doesn't support python -m.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import os
+from pathlib import Path
 
 import streamlit as st
-import requests
 
-API_URL = "http://127.0.0.1:8000"
+# ---------- Load secrets (Streamlit Cloud) into env vars the pipeline expects ----------
+# Locally, python-dotenv (called inside embedder.py/llm.py) still handles .env as before.
+try:
+    if "GROQ_API_KEY" in st.secrets:
+        os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+        os.environ["QDRANT_URL"] = st.secrets["QDRANT_URL"]
+        os.environ["QDRANT_API_KEY"] = st.secrets["QDRANT_API_KEY"]
+except FileNotFoundError:
+    pass  # no secrets.toml locally — .env (loaded inside the pipeline modules) is used instead
+
+from src.pipeline import answer_question
+from src.ingestion.loader import load_pdf
+from src.ingestion.chunker import chunk_pages
+from src.ingestion.embedder import embed_and_store
 
 st.set_page_config(page_title="RAG Knowledge Assistant", page_icon="📚", layout="centered")
 
@@ -49,7 +71,6 @@ header[data-testid="stHeader"] { background: transparent; }
     margin-bottom: 2.2rem;
 }
 
-/* Regular buttons (nav, upload) */
 .stButton > button {
     width: 100% !important;
     height: 90px !important;
@@ -69,7 +90,6 @@ header[data-testid="stHeader"] { background: transparent; }
 }
 .stButton > button p { color: white !important; font-weight: 700 !important; }
 
-/* Form submit button (Ask →) — different widget, needs its own rule */
 div[data-testid="stFormSubmitButton"] button {
     width: 100% !important;
     height: auto !important;
@@ -86,7 +106,6 @@ div[data-testid="stFormSubmitButton"] button:hover {
     box-shadow: 0 6px 24px rgba(236, 72, 153, 0.45) !important;
 }
 
-/* Text input (question box) */
 .stTextInput input {
     background: #10162C !important;
     color: #E5E7EB !important;
@@ -96,7 +115,6 @@ div[data-testid="stFormSubmitButton"] button:hover {
 }
 .stTextInput input::placeholder { color: #6B7280 !important; }
 
-/* Chat bubbles */
 div[data-testid="stChatMessage"] {
     border-radius: 16px;
     border: 1px solid #232A47;
@@ -114,7 +132,6 @@ div[data-testid="stChatMessage"] {
     font-weight: 600;
 }
 
-/* Upload zone */
 div[data-testid="stFileUploader"] {
     border: 2px dashed #A78BFA;
     border-radius: 14px;
@@ -126,10 +143,8 @@ div[data-testid="stFileUploader"] span { color: #9CA3AF !important; }
 
 h4, .stMarkdown p, .stCaption, p { color: #D1D5DB; }
 
-/* Spinner text color */
 div[data-testid="stSpinner"] p { color: #A78BFA !important; font-weight: 600; }
 
-/* Footer */
 .footer {
     text-align: center;
     margin-top: 3rem;
@@ -153,7 +168,7 @@ st.markdown(
 if "view" not in st.session_state:
     st.session_state.view = "chat"
 if "current_qa" not in st.session_state:
-    st.session_state.current_qa = None  # holds only the latest {question, answer, sources}
+    st.session_state.current_qa = None
 
 nav_left, nav_gap, nav_right = st.columns([1, 0.3, 1])
 with nav_left:
@@ -176,22 +191,16 @@ if st.session_state.view == "chat":
     if submitted and question:
         with st.spinner("🔎 Digging through your notes..."):
             try:
-                response = requests.post(
-                    f"{API_URL}/ask",
-                    json={"question": question, "top_k": 8},
-                    timeout=60,
-                )
-                response.raise_for_status()
-                result = response.json()
+                result = answer_question(question, top_k=8)
                 st.session_state.current_qa = {
                     "question": question,
                     "answer": result["answer"],
                     "sources": result["sources"],
                 }
-            except requests.exceptions.RequestException as e:
+            except Exception as e:
                 st.session_state.current_qa = {
                     "question": question,
-                    "answer": f"Couldn't reach the API: {e}",
+                    "answer": f"Something went wrong: {e}",
                     "sources": [],
                 }
 
@@ -221,20 +230,22 @@ else:
         if st.button("➕ Add to knowledge base", use_container_width=True):
             with st.spinner(f"Processing {uploaded_file.name}..."):
                 try:
-                    files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
-                    response = requests.post(f"{API_URL}/upload", files=files, timeout=120)
-                    response.raise_for_status()
-                    result = response.json()
+                    raw_pdf_dir = Path("data/raw_pdfs")
+                    raw_pdf_dir.mkdir(parents=True, exist_ok=True)
+                    save_path = raw_pdf_dir / uploaded_file.name
+                    with open(save_path, "wb") as f:
+                        f.write(uploaded_file.getvalue())
 
-                    if result.get("status") == "success":
-                        st.success(f"Added **{result['filename']}**")
-                        c1, c2 = st.columns(2)
-                        c1.metric("Pages processed", result["pages_processed"])
-                        c2.metric("Chunks created", result["chunks_created"])
-                    else:
-                        st.error(result.get("error", "Something went wrong."))
-                except requests.exceptions.RequestException as e:
-                    st.error(f"Couldn't reach the API: {e}")
+                    pages = load_pdf(save_path)
+                    chunks = chunk_pages(pages)
+                    embed_and_store(chunks)
+
+                    st.success(f"Added **{uploaded_file.name}**")
+                    c1, c2 = st.columns(2)
+                    c1.metric("Pages processed", len(pages))
+                    c2.metric("Chunks created", len(chunks))
+                except Exception as e:
+                    st.error(f"Something went wrong: {e}")
 
 # ---------- Footer ----------
 st.markdown('<div class="footer">Built by <b>Liyakat Ali Joo</b></div>', unsafe_allow_html=True)
