@@ -2,14 +2,20 @@
 chunker.py — splits extracted page text into overlapping chunks for embedding.
 """
 
+import uuid
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+NAMESPACE = uuid.NAMESPACE_DNS
+
 
 def chunk_pages(pages: list[dict], chunk_size: int = 500, chunk_overlap: int = 50) -> list[dict]:
     """
     Splits each page's text into overlapping chunks.
     Keeps source/page metadata attached to every chunk.
 
-    Returns a list of dicts: {"source": ..., "page": ..., "chunk_id": ..., "text": ...}
+    chunk_id is a deterministic UUID derived from (source, page, position) —
+    stable across re-runs, so re-uploading the same PDF updates its own
+    chunks instead of colliding with or overwriting other files' chunks.
     """
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -18,18 +24,19 @@ def chunk_pages(pages: list[dict], chunk_size: int = 500, chunk_overlap: int = 5
     )
 
     chunks = []
-    chunk_counter = 0
 
     for page in pages:
         page_chunks = splitter.split_text(page["text"])
-        for chunk_text in page_chunks:
+        for local_idx, chunk_text in enumerate(page_chunks):
+            unique_key = f"{page['source']}_p{page['page']}_c{local_idx}"
+            chunk_id = str(uuid.uuid5(NAMESPACE, unique_key))
+
             chunks.append({
                 "source": page["source"],
                 "page": page["page"],
-                "chunk_id": chunk_counter,
+                "chunk_id": chunk_id,
                 "text": chunk_text
             })
-            chunk_counter += 1
 
     return chunks
 
