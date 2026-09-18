@@ -10,6 +10,7 @@ from fastapi import FastAPI, UploadFile, File
 from src.ingestion.loader import load_pdf
 from src.ingestion.chunker import chunk_pages
 from src.ingestion.embedder import embed_and_store
+from src.ingestion.embedder import get_qdrant_client, COLLECTION_NAME
 
 from src.pipeline import answer_question
 
@@ -68,4 +69,30 @@ async def upload_pdf(file: UploadFile = File(...)):
         "filename": file.filename,
         "pages_processed": len(pages),
         "chunks_created": len(chunks),
+    }
+
+
+@app.get("/stats")
+def get_stats():
+    client = get_qdrant_client()
+    total_chunks = client.count(collection_name=COLLECTION_NAME, exact=True).count
+
+    sources = set()
+    next_offset = None
+    while True:
+        records, next_offset = client.scroll(
+            collection_name=COLLECTION_NAME,
+            limit=200,
+            offset=next_offset,
+            with_payload=["source"],
+        )
+        for r in records:
+            sources.add(r.payload["source"])
+        if next_offset is None:
+            break
+
+    return {
+        "total_chunks": total_chunks,
+        "total_documents": len(sources),
+        "documents": sorted(sources),
     }
