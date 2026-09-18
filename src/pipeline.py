@@ -7,12 +7,14 @@ from src.generation.llm import generate_answer
 
 
 def answer_question(question: str, top_k: int = 5) -> dict:
-    """
-    Runs the full RAG pipeline: retrieve relevant chunks, then generate a grounded answer.
-
-    Returns a dict: {"answer": str, "sources": list[dict]}
-    """
     chunks = retrieve(question, top_k=top_k)
+
+    if not chunks:
+        return {
+            "answer": "I couldn't find anything relevant to this question in your notes.",
+            "sources": [],
+        }
+
     answer = generate_answer(question, chunks)
 
     sources = [
