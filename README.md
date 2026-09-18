@@ -4,6 +4,8 @@ A production-style Retrieval-Augmented Generation (RAG) system that answers ques
 
 > Ask a question → the system retrieves the most relevant chunks from your notes → an LLM generates an answer using *only* that context → every answer is cited back to its source document and page.
 
+🔗 **Live demo:** [ragknowledgeassistant786.streamlit.app](https://ragknowledgeassistant786.streamlit.app/)
+
 ---
 
 ## ✨ Features
