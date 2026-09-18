@@ -54,9 +54,9 @@ header[data-testid="stHeader"] { background: transparent; }
 
 .main-title {
     font-family: 'Poppins', sans-serif;
-    font-size: 5.5rem;
-    font-weight: 900;
-    line-height: 1.15;
+    font-size: 6rem !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
     text-align: center;
     background: linear-gradient(90deg, #60A5FA, #A78BFA, #F472B6);
     -webkit-background-clip: text;
