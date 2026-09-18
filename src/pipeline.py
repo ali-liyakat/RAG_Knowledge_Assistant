@@ -6,7 +6,7 @@ from src.retrieval.retriever import retrieve
 from src.generation.llm import generate_answer
 
 
-def answer_question(question: str, top_k: int = 5) -> dict:
+def answer_question(question: str, top_k: int = 8) -> dict:
     chunks = retrieve(question, top_k=top_k)
 
     if not chunks:

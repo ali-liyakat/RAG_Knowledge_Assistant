@@ -1,0 +1,27 @@
+[
+  {
+    "question": "What is precision?",
+    "expected_source": "Deep_Learning_Fundamentals_Chapter_20.pdf",
+    "expected_page": 2
+  },
+  {
+    "question": "What is the difference between accuracy and precision?",
+    "expected_source": "Deep_Learning_Fundamentals_Chapter_20.pdf",
+    "expected_page": 2
+  },
+  {
+    "question": "What is a precision-recall curve?",
+    "expected_source": "Deep_Learning_Fundamentals_Chapter_20.pdf",
+    "expected_page": 3
+  },
+  {
+    "question": "What is specificity?",
+    "expected_source": "Deep_Learning_Fundamentals_Chapter_20.pdf",
+    "expected_page": 2
+  },
+  {
+    "question": "What is conditional probability?",
+    "expected_source": "Machine_Learning_From_First_Principles_Chapter_6.pdf",
+    "expected_page": 2
+  }
+]

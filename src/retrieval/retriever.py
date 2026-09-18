@@ -5,7 +5,7 @@ retriever.py — embeds a query and retrieves the most relevant chunks from Qdra
 from src.ingestion.embedder import get_embedding_model, get_qdrant_client, COLLECTION_NAME
 
 
-def retrieve(query: str, top_k: int = 5, score_threshold: float = 0.5) -> list[dict]:
+def retrieve(query: str, top_k: int = 8, score_threshold: float = 0.5) -> list[dict]:
     """
     Given a user question, returns the top_k most relevant chunks from Qdrant.
 
